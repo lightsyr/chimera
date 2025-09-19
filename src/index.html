@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chimera Stream Player</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-weight: 300;
+        }
+        video {
+            background: #000;
+            width: 90%;
+            max-width: 1280px;
+            margin-top: 20px;
+            border: 1px solid #444;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        p {
+            font-style: italic;
+            color: #888;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+    <h1>Streaming do Projeto</h1>
+    <video id="video" controls autoplay muted playsinline></video>
+    <p id="status">Aguardando o stream iniciar...</p>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const statusElement = document.getElementById('status');
+        
+        // O URL do nosso stream, servido pelo Node-Media-Server na porta 8000
+        const videoSrc = 'http://172.31.16.219:8000/live/stream/index.m3u8';
+
+        function loadStream() {
+            if (Hls.isSupported()) {
+                console.log("HLS é suportado, tentando conectar...");
+                statusElement.textContent = "Tentando conectar ao stream...";
+
+                const hls = new Hls();
+                hls.loadSource(videoSrc);
+                hls.attachMedia(videoElement);
+
+                // Quando o stream for carregado com sucesso
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    console.log("Stream carregado, iniciando o play!");
+                    statusElement.textContent = "Stream Conectado!";
+                    videoElement.play();
+                });
+
+                // Se houver um erro de rede (ex: o stream ainda não começou)
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        console.error('Erro fatal no HLS, tentando novamente em 2 segundos...', data);
+                        statusElement.textContent = `Stream não encontrado. Tentando novamente em 2s...`;
+                        // Destroi a instância atual e tenta de novo
+                        hls.destroy();
+                        setTimeout(loadStream, 2000);
+                    }
+                });
+
+            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                // Fallback para navegadores com suporte nativo a HLS (como o Safari)
+                videoElement.src = videoSrc;
+            }
+        }
+
+        // Inicia a primeira tentativa de carregar o stream
+        loadStream();
+    </script>
+</body>
+</html>

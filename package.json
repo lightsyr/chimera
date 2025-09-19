@@ -7,5 +7,9 @@
   "scripts": {},
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@roamhq/wrtc": "^0.9.1",
+    "node-media-server": "^4.0.21"
+  }
 }
